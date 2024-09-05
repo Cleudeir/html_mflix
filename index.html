@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Cards</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            max-width: 500px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+        }
+
+        .movies-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 5px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: #fff;
+            width: 200px;
+            height: 170px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .card-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .card-details div {
+            margin-bottom: 5px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            width: 90vw;
+            gap: 10px;
+        }
+
+        .pagination button {
+            padding: 10px 15px;
+            margin: 0 5px;
+            border: none;
+            background-color: #333;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Movie Cards</h1>
+        <input type="text" id="searchInput" placeholder="Search by title, year, or language...">
+    </div>
+    <div id="container" class="container">
+        <div id="movies" class="movies-container"></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const container = document.getElementById('moviesContainer');
+            const widthScreen = screen.width;
+            console.log('widthScreen: ', widthScreen);
+            
+            const moviesContainer = document.getElementById('movies');
+            const paginationContainer = document.getElementById('pagination');
+            let moviesData = [];
+            let currentPage = 1;
+            const items = Math.ceil(widthScreen / 200 - 1);
+            const itemsPerPage = items * 5;
+
+            searchInput.addEventListener('input', () => {
+                currentPage = 1;
+                renderMovies();
+            });
+
+            fetch('http://localhost:5000/api/movies')
+                .then(response => response.json())
+                .then(data => {
+                    moviesData = data;
+                    renderMovies();
+                })
+                .catch(error => console.error('Error fetching movies:', error));
+
+            function renderMovies() {
+                moviesContainer.innerHTML = '';
+                const searchTerm = searchInput.value.toLowerCase();
+                const filteredMovies = moviesData.filter(movie =>
+                    movie.title.toLowerCase().includes(searchTerm)
+                );
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const moviesToDisplay = filteredMovies.slice(startIndex, endIndex);
+
+                moviesToDisplay.forEach(movie => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="card-content">
+                            <div class="card-title">${movie.title}</div>
+                            <div class="card-details">
+                                <div>Language: ${movie.language}</div>
+                                <div>Year: ${movie.year}</div>
+                                <div>Resolution: ${movie.resolution}</div>
+                            </div>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => {
+                        fetch(`http://localhost:5000/api/movie?url=${movie.url}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                window.location.href = "https://redecanais.foo" + data.url;
+                            })
+                            .catch(error => console.error('Error fetching movie details:', error));
+                    });
+
+                    moviesContainer.appendChild(card);
+                });
+
+                renderPagination(filteredMovies.length);
+            }
+
+            function renderPagination(totalItems) {
+                paginationContainer.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                const createButton = (text, page) => {
+                   
+                    const button = document.createElement('button');
+                    button.textContent = text < 10 ? `0${text}` : text;
+                    button.disabled = currentPage === page;
+                    button.addEventListener('click', () => {
+                        currentPage = page;
+                        renderMovies();
+                    });
+                    return button;
+                };
+
+                if (currentPage == 1) {
+                    paginationContainer.appendChild(createButton('Previous', currentPage));
+                }
+
+                if (currentPage > 1) {
+                    paginationContainer.appendChild(createButton('Previous', currentPage - 1));
+                }
+
+                let startPage = Math.max(1, currentPage - Math.floor(items / 2));
+                let endPage = Math.min(totalPages, startPage + items - 1);
+
+                if (endPage - startPage + 1 < items) {
+                    startPage = Math.max(1, endPage - items + 1);
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    paginationContainer.appendChild(createButton(i, i));
+                }
+
+                if (currentPage < totalPages) {
+                    paginationContainer.appendChild(createButton('Next', currentPage + 1));
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
