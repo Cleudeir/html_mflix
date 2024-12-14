@@ -1,14 +1,14 @@
 
-                # index.html                
-                ## project structure
-                ```                    
-                html_mflix/
+# html_mflix                
+## project structure
+```                    
+html_mflix/
     styles.css
     README.md
     script.js
     index.html                
-                ```
-                ## Propósito e Descrição do Projeto
+```
+## Propósito e Descrição do Projeto
 
 Este projeto desenvolve uma interface web para exibir e reproduzir filmes.  Ele busca dados de filmes de uma API (`http://localhost:5000/api/movies`), permitindo aos usuários procurar filmes por título e visualizar informações básicas.  Clicar em um cartão de filme inicia uma solicitação para a URL do filme, abrindo-o em uma nova aba do navegador.  O projeto utiliza HTML, CSS e JavaScript.
 
